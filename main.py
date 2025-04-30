@@ -5,6 +5,8 @@ from PIL import Image
 import pytesseract
 import os
 
+
+#функция для парсинга текста
 def text_extraction(element):
     line_text=element.get_text() # вытягиваем текст
 
@@ -22,10 +24,33 @@ def text_extraction(element):
 
     return (line_text,format_list_text)
 
-"""
 
-pytesseract_scan(Image_path):
-    images = pdf2image.convert_from_path(input_file)
+
+def crop_image(element,pdf_object_page):
+    coords_xy_0=[element.x0,element.y0]
+    coords_xy_1=[element.x1,element.y1]
+
+    pdf_object_page.mediabox.left=coords_xy_0
+    pdf_object_page.mediabox.right=coords_xy_1
+
+    crop_image_pdf_write=PyPDF2.writter()
+    crop_image_pdf_write.add_page(pdf_object_page)
+
+    with open('cropped_image.pdf', 'wb') as crop_image_pdf_file:
+        crop_image_pdf_write.write(crop_image_pdf_file)
+
+def convert_pdfobject_png(input_pdf):
+    images=pdf2image.convert_from_path(input_pdf)
+    image=images[0]
+    print(image.size)
+    print(image.mode)
+
+    image.save('output_file.png',"PNG")
+
+
+
+def pytesseract_scan(Image_path):
+    images = pdf2image.convert_from_path(Image_path)
 
     text_image = Image.open(Image_path)
 
@@ -33,7 +58,7 @@ pytesseract_scan(Image_path):
 
 
     return text_convector
-"""
+
 """def __main__():
     return 0"""
 
@@ -47,7 +72,7 @@ PYPDF_read_file= PyPDF2.PdfReader(PYPDF_file_open,password=None, strict=False) #
 #for нужен для открытия каждой страницы и парсинга данных
 for pagenum, page in enumerate(pdfminer.high_level.extract_pages(PDF)):
     print(f'страница {pagenum}')
-    pdf= PYPDF_read_file.pages[pagenum]
+    pdf_object_page= PYPDF_read_file.pages[pagenum]
 
     # списки нужны для парсинга
     text_line = []
@@ -67,20 +92,17 @@ for pagenum, page in enumerate(pdfminer.high_level.extract_pages(PDF)):
 
 
 
-    for i in enumerate(pdf):
+    for i in enumerate(pdf_object_page):
         #if table_extraction_text_flag==False:
         text_line, size_text_line= text_extraction(element)
 
+    if isinstance (element, pdfminer.layout.LTFigure):
+            peremennaya= crop_image(element,pdf_object_page)
+            crop_image('cropped_image.pdf')
 
+            peremennaya=pytesseract_scan('output_file.png')
 
-        pass
-        pass
-
-        if isinstance (element, pdfminer.layout.LTFigure):
-
-            pass
-            pass
-        if isinstance(element, pdfminer.layout.LTRect):
+    if isinstance(element, pdfminer.layout.LTRect):
 
             pass
             pass
