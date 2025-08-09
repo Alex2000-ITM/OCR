@@ -1,4 +1,4 @@
-import PyPDF2, pdfminer, pdf2image
+import PyPDF2, pdfminer, pdf2image, pdfplumber
 import pdfminer.layout
 import pdfminer.high_level
 from PIL import Image
@@ -59,11 +59,42 @@ def pytesseract_scan(Image_path):
 
     return text_convector
 
+
+def extract_table(PDF,pagenum,table_num):
+    pdf_table=PDF.pdflumber.open(PDF)
+
+    page_table=pdf_table.pages[pagenum]
+
+    table_pars=page_table.extract_table()[table_num]
+
+    return table_pars
+
+
+def convert_table(table):
+    cleaned_now=[]
+    table_string=''
+    for row in table:
+
+        for item in None:
+            cleaned_now.append('')
+        else:
+            cleaned_now.append(str(item).replace('\n','')).strip()
+
+        table_string+='|'+'|'.join(cleaned_now)+'|\n'
+
+    if table!=None:
+        header_table='|'+'|'.join('---')*len(table[0])+'|\n'
+        table_string=table_string.split('\n')[0]+'\n'+header_table+'\n'.join(table_string.split('\n')[1:])
+
+    return table_string
+
+
+
 """def __main__():
     return 0"""
 
 
-PDF=('text.pdf') #открываем содержимое файла
+PDF=('Doc1.pdf') #открываем содержимое файла
 # exact_path_pdf = os.path.abspath(PDF) путь до файла
 
 PYPDF_file_open= open(PDF,'rb') #читаем файл (бинарник тоже)
@@ -77,6 +108,10 @@ for pagenum, page in enumerate(pdfminer.high_level.extract_pages(PDF)):
     # списки нужны для парсинга
     text_line = []
     size_text_line = []
+
+    pdf_lumber_table=pdfplumber.open(PDF)
+    page_table=pdf_lumber_table.pages[pagenum]
+    tables=page_table.find_tables()
 
     # Бинарники для if
     #table_extraction_text_flag = False
@@ -94,15 +129,21 @@ for pagenum, page in enumerate(pdfminer.high_level.extract_pages(PDF)):
 
     for i in enumerate(pdf_object_page):
         #if table_extraction_text_flag==False:
-        text_line, size_text_line= text_extraction(element)
+        if isinstance(pdf_object_page,pdfminer.layout.LTTextContainer):
+            text_line, size_text_line= text_extraction(element)
 
-    if isinstance (element, pdfminer.layout.LTFigure):
+        if isinstance (element, pdfminer.layout.LTFigure):
             peremennaya= crop_image(element,pdf_object_page)
             crop_image('cropped_image.pdf')
 
             peremennaya=pytesseract_scan('output_file.png')
 
-    if isinstance(element, pdfminer.layout.LTRect):
+        if isinstance(element, pdfminer.layout.LTRect):
+            crop_box=page.bbox()[1]-tables.bbox()[0]
+
+
+            table_pars = extract_table()
+            table_string=convert_table(table_pars)
 
             pass
             pass
